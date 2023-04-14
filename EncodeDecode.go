@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -54,12 +55,8 @@ func (ch *CodesHelpers) EncodeFile() error {
 	if err != nil {
 		return err
 	}
-
-	writer := bufio.NewWriter(ch.file)
-	_, err = writer.WriteString(ch.FirstSymbol[prev])
-	if err != nil {
-		return err
-	}
+	var sb strings.Builder
+	sb.WriteString(ch.FirstSymbol[prev])
 
 	for {
 		letter, err := reader.ReadByte()
@@ -69,18 +66,28 @@ func (ch *CodesHelpers) EncodeFile() error {
 			}
 			return err
 		}
-		_, err = writer.WriteString(ch.Matrix[prev][letter])
-		if err != nil {
-			return err
-		}
+		sb.WriteString(ch.Matrix[prev][letter])
 		prev = letter
 	}
+	fmt.Println()
 
 	_, err = ch.file.Seek(0, 0)
 	if err != nil {
 		return err
 	}
-	if err = writer.Flush(); err != nil {
+	err = ch.file.Truncate(0)
+	if err != nil {
+		return err
+	}
+	codedText := sb.String()
+	binBytes := make([]byte, (len(codedText)+7)/8)
+	for i := 0; i < len(codedText); i++ {
+		if codedText[i] == '1' {
+			binBytes[i/8] |= 1 << uint(7-i%8)
+		}
+	}
+	_, err = ch.file.Write(binBytes)
+	if err != nil {
 		return err
 	}
 
@@ -126,37 +133,59 @@ func (ch *CodesHelpers) DecodeFile() error {
 	if err != nil {
 		return err
 	}
+
 	_, err = ch.file.Seek(0, 0)
+	if err != nil {
+		return err
+	}
 	firstSymbol := false
 	var sb strings.Builder
 	prev := 0
-	scanner := bufio.NewScanner(ch.file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		for i := 0; i < len(line); {
-			j := i + 1
-			for ; j <= len(line); j++ {
-				code := line[i:j]
-				if !firstSymbol {
-					symbol := ch.findInRow(code)
-					if symbol != -1 {
-						sb.WriteByte(byte(symbol))
-						prev = symbol
-						firstSymbol = true
-						break
-					}
-				} else {
-					symbol := ch.findInCol(code, prev)
-					if symbol != -1 {
-						sb.WriteByte(byte(symbol))
-						prev = symbol
-						break
-					}
+	reader := bufio.NewReader(ch.file)
+	var buffer strings.Builder
+
+	for {
+		bits, err := reader.ReadByte()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+
+		for i := 7; i >= 0; i-- {
+			mask := uint8(1) << uint8(i)
+			bit := (bits & mask) >> uint8(i)
+			buffer.WriteString(strconv.Itoa(int(bit)))
+
+		}
+	}
+
+	codedText := buffer.String()
+
+	for i := 0; i < len(codedText); {
+		j := i + 1
+		for ; j <= len(codedText); j++ {
+			code := codedText[i:j]
+			if !firstSymbol {
+				symbol := ch.findInRow(code)
+				if symbol != -1 {
+					sb.WriteByte(byte(symbol))
+					prev = symbol
+					firstSymbol = true
+					break
+				}
+			} else {
+				symbol := ch.findInCol(code, prev)
+				if symbol != -1 {
+					sb.WriteByte(byte(symbol))
+					prev = symbol
+					break
 				}
 			}
-
-			i = j
 		}
+
+		i = j
 	}
 
 	_, err = ch.file.Seek(0, 0)
