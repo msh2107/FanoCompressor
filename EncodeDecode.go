@@ -206,6 +206,16 @@ func (ch *CodesHelpers) DecodeFile() error {
 		return err
 	}
 
+	err = os.Remove("firstSymbol.txt")
+	if err != nil {
+		return err
+	}
+
+	err = os.Remove("matrix.txt")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

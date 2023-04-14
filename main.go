@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
 	var name string
 	var mode string
+
+	t := time.Now()
 
 	fmt.Print("Введите имя файла: ")
 	_, err := fmt.Scan(&name)
@@ -46,4 +49,6 @@ func main() {
 	} else {
 		log.Fatal("Incorrect mode")
 	}
+
+	fmt.Println("Время выполнения: ", time.Since(t))
 }
