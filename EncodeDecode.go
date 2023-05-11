@@ -16,12 +16,12 @@ type CodesHelpers struct {
 }
 
 func NewCodesHelpers(file *os.File) *CodesHelpers {
-	mtrx := make([][]string, 256)
-	for i := range mtrx {
-		mtrx[i] = make([]string, 256)
+	matrix := make([][]string, 256)
+	for i := range matrix {
+		matrix[i] = make([]string, 256)
 	}
 	return &CodesHelpers{
-		Matrix:      mtrx,
+		Matrix:      matrix,
 		FirstSymbol: make([]string, 256),
 		file:        file,
 	}
@@ -69,7 +69,6 @@ func (ch *CodesHelpers) EncodeFile() error {
 		sb.WriteString(ch.Matrix[prev][letter])
 		prev = letter
 	}
-	fmt.Println()
 
 	_, err = ch.file.Seek(0, 0)
 	if err != nil {
@@ -80,18 +79,34 @@ func (ch *CodesHelpers) EncodeFile() error {
 		return err
 	}
 	codedText := sb.String()
-	binBytes := make([]byte, (len(codedText)+7)/8)
+	binaryData := make([]byte, (len(codedText)+7)/8)
+
 	for i := 0; i < len(codedText); i++ {
 		if codedText[i] == '1' {
-			binBytes[i/8] |= 1 << uint(7-i%8)
+			binaryData[i/8] |= 1 << (7 - i%8)
 		}
 	}
-	_, err = ch.file.Write(binBytes)
+	var bitsStr strings.Builder
+
+	for _, b := range binaryData {
+		byteStr := strconv.FormatUint(uint64(b), 2)
+
+		for i := len(byteStr); i < 8; i++ {
+			byteStr = "0" + byteStr
+		}
+		bitsStr.WriteString(byteStr)
+	}
+
+	_, err = ch.file.Write([]byte{byte(bitsStr.Len() - len(codedText))})
+	if err != nil {
+		return err
+	}
+	_, err = ch.file.Write(binaryData)
 	if err != nil {
 		return err
 	}
 
-	fileForMatrix, err := os.Create("matrix.txt")
+	fileForMatrix, err := os.Create(strings.Trim(ch.file.Name(), ".txt") + "Matrix")
 	defer func(fileForMatrix *os.File) {
 		err := fileForMatrix.Close()
 		if err != nil {
@@ -102,11 +117,11 @@ func (ch *CodesHelpers) EncodeFile() error {
 	for _, row := range ch.Matrix {
 		_, err := fmt.Fprintln(fileForMatrix, row)
 		if err != nil {
+			fmt.Println(err)
 			return err
 		}
 	}
-
-	fileForFirstSymbol, err := os.Create("firstSymbol.txt")
+	fileForFirstSymbol, err := os.Create(strings.Trim(ch.file.Name(), ".txt") + "FirstSymbol")
 	defer func(fileForMatrix *os.File) {
 		err := fileForMatrix.Close()
 		if err != nil {
@@ -126,6 +141,7 @@ func (ch *CodesHelpers) DecodeFile() error {
 
 	err := ch.scanMatrix()
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
@@ -142,6 +158,10 @@ func (ch *CodesHelpers) DecodeFile() error {
 	var sb strings.Builder
 	prev := 0
 	reader := bufio.NewReader(ch.file)
+	cut, err := reader.ReadByte()
+	if err != nil {
+		return err
+	}
 	var buffer strings.Builder
 
 	for {
@@ -157,15 +177,14 @@ func (ch *CodesHelpers) DecodeFile() error {
 			mask := uint8(1) << uint8(i)
 			bit := (bits & mask) >> uint8(i)
 			buffer.WriteString(strconv.Itoa(int(bit)))
-
 		}
 	}
 
 	codedText := buffer.String()
 
-	for i := 0; i < len(codedText); {
+	for i := 0; i < len(codedText)-int(cut); {
 		j := i + 1
-		for ; j <= len(codedText); j++ {
+		for ; j <= len(codedText)-int(cut); j++ {
 			code := codedText[i:j]
 			if !firstSymbol {
 				symbol := ch.findInRow(code)
@@ -184,7 +203,6 @@ func (ch *CodesHelpers) DecodeFile() error {
 				}
 			}
 		}
-
 		i = j
 	}
 
@@ -196,6 +214,7 @@ func (ch *CodesHelpers) DecodeFile() error {
 	if err != nil {
 		return err
 	}
+
 	writer := bufio.NewWriter(ch.file)
 	_, err = writer.WriteString(sb.String())
 	if err != nil {
@@ -205,13 +224,12 @@ func (ch *CodesHelpers) DecodeFile() error {
 	if err != nil {
 		return err
 	}
-
-	err = os.Remove("firstSymbol.txt")
+	err = os.Remove(strings.Trim(ch.file.Name(), ".txt") + "FirstSymbol")
 	if err != nil {
 		return err
 	}
 
-	err = os.Remove("matrix.txt")
+	err = os.Remove(strings.Trim(ch.file.Name(), ".txt") + "Matrix")
 	if err != nil {
 		return err
 	}
@@ -220,13 +238,14 @@ func (ch *CodesHelpers) DecodeFile() error {
 }
 
 func (ch *CodesHelpers) scanMatrix() error {
-	fileWithMatrix, err := os.Open("matrix.txt")
+	fileWithMatrix, err := os.Open(strings.Trim(ch.file.Name(), ".txt") + "Matrix")
 	defer func(fileWithMatrix *os.File) {
 		err := fileWithMatrix.Close()
 		if err != nil {
 			return
 		}
 	}(fileWithMatrix)
+
 	if err != nil {
 		return err
 	}
@@ -244,7 +263,7 @@ func (ch *CodesHelpers) scanMatrix() error {
 }
 
 func (ch *CodesHelpers) scanFirstSymbol() error {
-	fileWithFirstSymbol, err := os.Open("firstSymbol.txt")
+	fileWithFirstSymbol, err := os.Open(strings.Trim(ch.file.Name(), ".txt") + "FirstSymbol")
 	defer func(fileWithFirstSymbol *os.File) {
 		err := fileWithFirstSymbol.Close()
 		if err != nil {
