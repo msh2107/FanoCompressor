@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -61,12 +62,17 @@ func workWithDirectory(name, mode string) error {
 	}
 
 	for _, file := range files {
+		if strings.HasSuffix(file.Name(), "Matrix") || strings.HasSuffix(file.Name(), "FirstSymbol") {
+			continue
+		}
 		filePath := filepath.Join(name, file.Name())
+		fmt.Println(filePath)
 		if file.IsDir() {
 			err = workWithDirectory(filePath, mode)
 			if err != nil {
 				return err
 			}
+			continue
 		}
 		err = workWithFile(filePath, mode)
 
@@ -81,7 +87,7 @@ func workWithDirectory(name, mode string) error {
 func workWithFile(name, mode string) error {
 	file, err := os.OpenFile(name, os.O_RDWR, 0466)
 	if err != nil {
-		return nil
+		return err
 	}
 	defer func(file *os.File) {
 		err := file.Close()
