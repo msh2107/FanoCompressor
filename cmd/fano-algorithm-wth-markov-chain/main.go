@@ -8,19 +8,21 @@ import (
 
 func main() {
 	var mode int
-	fmt.Println("Выберите режим кодирования\n1. Чистый Фано\n2. Фано на цепи Маркова")
+	fmt.Println("Выберите режим кодирования:\n1. Чистый Фано\n2. Фано на цепи Маркова")
+	fmt.Print("Ваш выбор: ")
 	_, err := fmt.Scan(&mode)
 	if err != nil {
 		log.Fatal(err)
 	}
 	switch mode {
 	case 1:
-		err = app.FanoWithMarkovChain()
+		err = app.FanoClear()
 		if err != nil {
 			log.Fatal(err)
 		}
 	case 2:
-		err = app.FanoClear()
+
+		err = app.FanoWithMarkovChain()
 		if err != nil {
 			log.Fatal(err)
 		}
