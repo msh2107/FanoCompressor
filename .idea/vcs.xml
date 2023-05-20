@@ -2,7 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dir/map" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/dir/priority_queue" vcs="Git" />
   </component>
 </project>
