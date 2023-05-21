@@ -1,6 +1,9 @@
 package FanoAlgorithm
 
-import "sort"
+import (
+	"math"
+	"sort"
+)
 
 type code struct {
 	Index int
@@ -30,34 +33,60 @@ func FanoEncoding(freq []int) []code {
 	}
 	sort.Slice(codes, func(i, j int) bool { return codes[i].freq > codes[j].freq })
 
-	buildCodes(0, len(codes)-1, codes)
+	buildCodes(codes)
 	return codes
 }
 
-func buildCodes(left int, right int, codes []code) {
-	if left == right {
+func buildCodes(codes []code) {
+	if len(codes) < 2 {
 		return
 	}
-	if left+1 == right {
-		codes[left].Code += "0"
-		codes[right].Code += "1"
-		return
-	}
-	mid := left
-	sum := codes[mid].freq
-	for i := left + 1; i < right; i++ {
-		sum += codes[i].freq
-		if sum > codes[len(codes)/2].freq {
-			mid = i
-			break
+
+	divider := bestDividerPosition(codes)
+
+	for i := 0; i < len(codes); i++ {
+		if i >= divider {
+			codes[i].Code += "0"
+		} else {
+			codes[i].Code += "1"
 		}
 	}
-	for i := left; i <= mid; i++ {
-		codes[i].Code += "0"
+
+	buildCodes(codes[:divider])
+	buildCodes(codes[divider:])
+}
+
+func bestDividerPosition(codes []code) int {
+	total := 0
+	for _, code := range codes {
+		total += code.freq
 	}
-	for i := mid + 1; i <= right; i++ {
-		codes[i].Code += "1"
+
+	left := 0
+	prevDiff := math.MaxInt
+	bestPosition := 0
+
+	for i := 0; i < len(codes)-1; i++ {
+		left += codes[0].freq
+
+		right := total - left
+
+		diff := abs(right - left)
+		if diff >= prevDiff {
+			break
+		}
+
+		prevDiff = diff
+		bestPosition = i + 1
 	}
-	buildCodes(left, mid, codes)
-	buildCodes(mid+1, right, codes)
+
+	return bestPosition
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+
+	return x
 }

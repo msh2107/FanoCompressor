@@ -2,6 +2,7 @@
 <project version="4">
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/asya.txt" charset="windows-1251" />
+    <file url="file://$PROJECT_DIR$/test/test1/besy.txt" charset="windows-1251" />
     <file url="file://$PROJECT_DIR$/text.txt" charset="UTF-16" />
     <file url="file://$PROJECT_DIR$/war_and_peace.txt" charset="windows-1251" />
   </component>
