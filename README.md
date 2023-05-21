@@ -14,10 +14,11 @@
 
 После чистого алгоритма Фано:
 
-![image](https://github.com/msh2107/FanoCompressor/assets/115034776/18701c36-5931-4b8f-b59f-b8f1adfc61a9)
+![image](https://github.com/msh2107/FanoCompressor/assets/115034776/2f633da1-a866-48d6-b5a3-342f6a2c4b07)
 
 
 После алгоритма Фано на цепи Маркова:
 
-![image](https://github.com/msh2107/FanoCompressor/assets/115034776/81197574-9356-45ca-a5ce-ba2677cad06b)
+![image](https://github.com/msh2107/FanoCompressor/assets/115034776/9207ff50-7aef-4e4f-aca8-b98a2616c85d)
+
 
